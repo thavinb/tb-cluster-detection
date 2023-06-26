@@ -41,6 +41,7 @@ workflow READ_MAPPING {
 
     // Join BAM and BAI channels
     ch_bam = bam_markdup.bam.join( bam_index.bai )
+    println(ch_bam)
 
     // Get bam stats: flagstat, coverage, and depth
     SAMTOOLS_DEPTH( bam_markdup.bam )
@@ -48,8 +49,9 @@ workflow READ_MAPPING {
     SAMTOOLS_COVERAGE( ch_bam )
 
     emit:
-    bam = bam_markdup.bam                            // channel: [ val(meta), bam ]
-    bai = bam_index.bai                              // channel: [ val(meta), bai ]
+    bam = ch_bam                                     // channel: [ val(meta), bam , bai]
     versions = ch_versions                           // channel: [ versions.yml, .. ]
 }
+
+
 

@@ -11,21 +11,23 @@ WorkflowTcd.initialise(params, log)
 
 // TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta, params.adapter ]
+def checkPathParamList = [ params.input, params.multiqc_config, params.fasta, params.adapter, params.interval ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
 if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
 if (params.fasta) {
-    ch_fasta = [ file(params.fasta).getBaseName() , file(params.fasta) ]
+    ch_fasta = [  [ id:file(params.fasta).getBaseName() ] , file(params.fasta) ]
     } else if (params.genome.fasta) {
-        ch_fasta = [ file(params.genome.fasta).getBaseName() , file(params.genome.fasta) ]
+// TODO: get correct id name for igenome fasta
+        ch_fasta = [ [ id:file(params.genome.fasta).getBaseName() ] , file(params.genome.fasta) ]
     } else {
         exit 1, 'Reference must be specified!! either locally (--fasta) or through aws igenomes (--genome)'
     }
-if (params.adapter != null) {
-    ch_adapter = file(params.adapter)
-} else { ch_adapter = [] }
+// TODO: Add default adapter file.
+if (params.adapter != null) { ch_adapter = file(params.adapter) } else { ch_adapter = [] }
+if (params.interval) { ch_interval = file(params.interval) } else { ch_interval = "chr:" }
+if (params.drgstrmodel) { ch_drgstrmodel=params.drgstrmodel } else { ch_drgstrmodel = [] }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,6 +51,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 include { INPUT_CHECK } from '../subworkflows/local/input_check'
 include { READ_MAPPING } from '../subworkflows/local/read_mapping'
+include { VARIANT_CALLING } from '../subworkflows/local/variant_calling.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -61,6 +64,11 @@ include { READ_MAPPING } from '../subworkflows/local/read_mapping'
 //
 include { FASTP                       } from '../modules/nf-core/fastp/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
+include { GATK4_GENOMICSDBIMPORT      } from '../modules/nf-core/gatk4/genomicsdbimport/main'
+include { GATK4_GENOTYPEGVCFS         } from '../modules/nf-core/gatk4/genotypegvcfs/main'
+include { GATK4_VARIANTFILTRATION     } from '../modules/nf-core/gatk4/variantfiltration/main'
+include { GATK4_SELECTVARIANTS        } from '../modules/nf-core/gatk4/selectvariants/main'
+include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
@@ -103,6 +111,26 @@ workflow TCD {
         ch_fasta
     )
     ch_versions = ch_versions.mix(READ_MAPPING.out.versions)
+
+    //
+    // PREPARE INPUT
+    //
+
+    READ_MAPPING.out.bam
+        .map {
+            [ it[0], it[1], it[2], ch_interval, ch_drgstrmodel ]
+        }.set { ch_variantcalling_input }
+
+    //
+    // SUBWORKFLOW: TODO variant calling
+    //
+
+    VARIANT_CALLING (
+        ch_variantcalling_input,
+        ch_fasta,
+    )
+
+    ch_versions = ch_versions.mix(VARIANT_CALLING.out.versions)
 
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
