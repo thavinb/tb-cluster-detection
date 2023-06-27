@@ -16,18 +16,50 @@ for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true
 
 // Check mandatory parameters
 if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
+
+// TODO: get correct id name for igenome fasta
 if (params.fasta) {
     ch_fasta = [  [ id:file(params.fasta).getBaseName() ] , file(params.fasta) ]
     } else if (params.genome.fasta) {
-// TODO: get correct id name for igenome fasta
         ch_fasta = [ [ id:file(params.genome.fasta).getBaseName() ] , file(params.genome.fasta) ]
     } else {
         exit 1, 'Reference must be specified!! either locally (--fasta) or through aws igenomes (--genome)'
     }
+
 // TODO: Add default adapter file.
-if (params.adapter != null) { ch_adapter = file(params.adapter) } else { ch_adapter = [] }
-if (params.interval) { ch_interval = file(params.interval) } else { ch_interval = "chr:" }
+if (params.adapter) { ch_adapter = file(params.adapter) } else { ch_adapter = [] }
+
+// TODO: Declare default interval file location.
+def create_default_interval ( fasta , interval_file ) {
+    interval_file.text = ''
+    def is_header = { it[0].contains(">") }
+    fasta_reader = file(fasta).newReader()
+    while ( line = fasta_reader.readLine() ) {
+        if ( line.any(is_header) ) {
+        header_len = line.length()
+        interval_list.append("${line[1..-1]}\n")
+        }
+    }
+    print "[INFO]: interval_list.list does not specified. All genome will be use!!."
+    return interval_file
+}
+if (params.interval) {
+    ch_interval = file(params.interval)
+    extension = ch_interval.getExtension()
+    if ( extension != "list" && extension != "intervals" ) {
+        exit 1 , "interval file must have one of the supported file extensions ([.list, .intervals])"
+    }
+} else if (params.fasta) {
+    interval_list = file('./assets/.tmp_interval_list.list', hidden: true)
+    ch_interval = create_default_interval( params.fasta, interval_list )
+} else if (params.genome) {
+    interval_list = file('./assets/.tmp_interval_list.list', hidden: true)
+    ch_interval = create_default_interval( params.genome, interval_list )
+}
+
 if (params.drgstrmodel) { ch_drgstrmodel=params.drgstrmodel } else { ch_drgstrmodel = [] }
+if (params.dbsnp) { ch_dbsnp = params.dbsnp } else { ch_dbsnp = [] }
+if (params.dbsnp_tbi) { ch_dbsnp_tbi = params.dbsnp_tbi } else { ch_dbsnp_tbi = [] }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
