@@ -34,7 +34,7 @@ process GATK4_VARIANTFILTRATION {
     """
     gatk --java-options "-Xmx${avail_mem}M" VariantFiltration \\
         --variant $vcf \\
-        --output ${prefix}.vcf.gz \\
+        --output ${prefix}_mask_filter.vcf.gz \\
         --reference $fasta \\
         --tmp-dir . \\
         $args

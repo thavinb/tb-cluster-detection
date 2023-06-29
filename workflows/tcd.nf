@@ -83,7 +83,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 include { INPUT_CHECK } from '../subworkflows/local/input_check'
 include { READ_MAPPING } from '../subworkflows/local/read_mapping'
-include { VARIANT_CALLING } from '../subworkflows/local/variant_calling.nf'
+include { JOINT_CALLING } from '../subworkflows/local/joint_calling'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,14 +94,12 @@ include { VARIANT_CALLING } from '../subworkflows/local/variant_calling.nf'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTP                       } from '../modules/nf-core/fastp/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { GATK4_GENOMICSDBIMPORT      } from '../modules/nf-core/gatk4/genomicsdbimport/main'
-include { GATK4_GENOTYPEGVCFS         } from '../modules/nf-core/gatk4/genotypegvcfs/main'
-include { GATK4_VARIANTFILTRATION     } from '../modules/nf-core/gatk4/variantfiltration/main'
-include { GATK4_SELECTVARIANTS        } from '../modules/nf-core/gatk4/selectvariants/main'
-include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { FASTP                          } from '../modules/nf-core/fastp/main'
+include { MULTIQC                        } from '../modules/nf-core/multiqc/main'
+include { SAMTOOLS_FAIDX                 } from '../modules/nf-core/samtools/faidx/main'
+include { GATK4_CREATESEQUENCEDICTIONARY } from '../modules/nf-core/gatk4/createsequencedictionary/main'
+include { GATK4_HAPLOTYPECALLER          } from '../modules/nf-core/gatk4/haplotypecaller/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS    } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,25 +143,60 @@ workflow TCD {
     ch_versions = ch_versions.mix(READ_MAPPING.out.versions)
 
     //
-    // PREPARE INPUT
+    // MODULE: Create GATK dictionary from reference
     //
+    GATK4_CREATESEQUENCEDICTIONARY( ch_fasta )
+    ch_versions = ch_versions.mix( GATK4_CREATESEQUENCEDICTIONARY.out.versions )
 
+    //
+    // PREPARE INPUT: FOR VARIANT_CALLING MODULE
+    // channel: [ val(meta), bam, bai, interval, drgstrmodel ]
+    //
     READ_MAPPING.out.bam
         .map {
             [ it[0], it[1], it[2], ch_interval, ch_drgstrmodel ]
         }.set { ch_variantcalling_input }
 
     //
-    // SUBWORKFLOW: TODO variant calling
+    // MODULE: Index reference fasta
     //
+    SAMTOOLS_FAIDX ( ch_fasta )
+    ch_versions = ch_versions.mix( SAMTOOLS_FAIDX.out.versions )
 
-    VARIANT_CALLING (
+    //
+    // MOUDLE: Variant Calling
+    // TODO: make script to make sample-map of all vcf output.
+    //
+    GATK4_HAPLOTYPECALLER (
         ch_variantcalling_input,
-        ch_fasta,
+        ch_fasta[1],
+        SAMTOOLS_FAIDX.out.fai
+            .map { it[1] },
+        GATK4_CREATESEQUENCEDICTIONARY.out.dict
+            .map { it[1] },
+        ch_dbsnp,
+        ch_dbsnp_tbi
     )
+    ch_versions = ch_versions.mix( GATK4_HAPLOTYPECALLER.out.versions )
 
-    ch_versions = ch_versions.mix(VARIANT_CALLING.out.versions)
+    //
+    // PREPARE INPUT: collect all vcf into a list to make a joint vcf
+    //
+    ch_vcf = GATK4_HAPLOTYPECALLER.out.vcf.collect { it[1] }
+    ch_tbi = GATK4_HAPLOTYPECALLER.out.tbi.collect { it[1] }
 
+    //
+    // SUBWORKFLOW: Joint calling
+    //
+    JOINT_CALLING (
+        ch_vcf,
+        ch_tbi,
+        ch_fasta,
+        SAMTOOLS_FAIDX.out.fai,
+        GATK4_CREATESEQUENCEDICTIONARY.out.dict,
+        ch_interval
+    )
+    ch_versions = ch_versions.mix( JOINT_CALLING.out.versions )
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
