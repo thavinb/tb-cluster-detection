@@ -81,8 +81,8 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
-include { READ_MAPPING } from '../subworkflows/local/read_mapping'
+include { INPUT_CHECK   } from '../subworkflows/local/input_check'
+include { READ_MAPPING  } from '../subworkflows/local/read_mapping'
 include { JOINT_CALLING } from '../subworkflows/local/joint_calling'
 
 /*
@@ -99,7 +99,9 @@ include { MULTIQC                        } from '../modules/nf-core/multiqc/main
 include { SAMTOOLS_FAIDX                 } from '../modules/nf-core/samtools/faidx/main'
 include { GATK4_CREATESEQUENCEDICTIONARY } from '../modules/nf-core/gatk4/createsequencedictionary/main'
 include { GATK4_HAPLOTYPECALLER          } from '../modules/nf-core/gatk4/haplotypecaller/main'
+include { GATK4_VARIANTSTOTABLE          } from '../modules/local/gatk4/variantstotable/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS    } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { CREATE_MSA                     } from '../modules/local/create_msa'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,6 +199,20 @@ workflow TCD {
         ch_interval
     )
     ch_versions = ch_versions.mix( JOINT_CALLING.out.versions )
+
+    //
+    // MODULE: Turn variants to tabular format
+    //
+    GATK4_VARIANTSTOTABLE (
+       JOINT_CALLING.out.vcf,
+       JOINT_CALLING.out.tbi,
+    )
+    ch_versions = ch_versions.mix( GATK4_VARIANTSTOTABLE.out.versions )
+
+    CREATE_MSA (
+        GATK4_VARIANTSTOTABLE.out.table
+    )
+    ch_versions = ch_versions.mix( CREATE_MSA.out.versions )
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
