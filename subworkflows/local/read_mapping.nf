@@ -48,7 +48,10 @@ workflow READ_MAPPING {
     SAMTOOLS_COVERAGE( ch_bam )
 
     emit:
-    bam = ch_bam                                     // channel: [ val(meta), bam , bai]
+    bam      = ch_bam                                // channel: [ val(meta), bam , bai ]
+    depth    = SAMTOOLS_DEPTH.out.tsv                // channel: [ val(meta), tsv ]
+    flagstat = SAMTOOLS_FLAGSTAT.out.flagstat        // channel: [ val(meta), flagstat ]
+    coverage = SAMTOOLS_COVERAGE.out.coverage        // channel: [ val(meta), coverage ]
     versions = ch_versions                           // channel: [ versions.yml, .. ]
 }
 
