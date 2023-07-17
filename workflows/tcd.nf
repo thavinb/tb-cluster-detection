@@ -40,20 +40,23 @@ def create_default_interval ( fasta , interval_file ) {
         interval_list.append("${line[1..-1]}\n")
         }
     }
-    print "[INFO]: interval_list.list does not specified. All genome will be use!!."
+    print "[INFO]: Interval file does not specified. Default interval of entire fasta will be used"
+    print "[INFO]: Default GATK-style `.list` interval file is created at `assets/default_interval.list`"
+    print "[INFO]: To resume the pipeline correctly, please specify `--interval ./assets/default_interval.list` when using `-resume` flag."
+
     return interval_file
 }
 if (params.interval) {
     ch_interval = file(params.interval)
     extension = ch_interval.getExtension()
-    if ( extension != "list" && extension != "intervals" ) {
-        exit 1 , "interval file must have one of the supported file extensions ([.list, .intervals])"
+    if ( extension != "list" && extension != "intervals" && extension != "bed" && extension != "vcf" ) {
+        exit 1 , "Interval file must have one of the supported file extensions ([.list, .intervals, .bed, .vcf])"
     }
 } else if (params.fasta) {
-    interval_list = file('./assets/.tmp_interval_list.list', hidden: true)
+    interval_list = file("$projectDir/assets/default_interval.list")
     ch_interval = create_default_interval( params.fasta, interval_list )
 } else if (params.genome) {
-    interval_list = file('./assets/.tmp_interval_list.list', hidden: true)
+    interval_list = file("$projectDir/assets/default_interval.list")
     ch_interval = create_default_interval( params.genome, interval_list )
 }
 
@@ -232,6 +235,7 @@ workflow TCD {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(JOINT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(READ_MAPPING.out.metrics.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(READ_MAPPING.out.flagstat.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
 

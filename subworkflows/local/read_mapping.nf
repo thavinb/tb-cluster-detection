@@ -49,6 +49,7 @@ workflow READ_MAPPING {
 
     emit:
     bam      = ch_bam                                // channel: [ val(meta), bam , bai ]
+    metrics  = GATK4_MARKDUPLICATES.out.metrics      // channel: [ val(meta), metrics ]
     depth    = SAMTOOLS_DEPTH.out.tsv                // channel: [ val(meta), tsv ]
     flagstat = SAMTOOLS_FLAGSTAT.out.flagstat        // channel: [ val(meta), flagstat ]
     coverage = SAMTOOLS_COVERAGE.out.coverage        // channel: [ val(meta), coverage ]

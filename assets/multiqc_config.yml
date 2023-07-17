@@ -4,6 +4,8 @@ top_modules:
   - fastp:
       name: "Prepossing reads (fastp)"
       # info: "fastp"
+  - picard/markdups:
+      name: "Picard Mark duplication metrics (gatk4 markduplicate)"
   - samtools:
       name: "Mapping statistics (samtools)"
       # info: "samtools stat"
