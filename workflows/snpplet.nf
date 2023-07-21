@@ -7,7 +7,7 @@
 def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 
 // Validate input parameters
-WorkflowTcd.initialise(params, log)
+WorkflowSnpplet.initialise(params, log)
 
 // TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
@@ -59,10 +59,9 @@ if (params.interval) {
     interval_list = file("$projectDir/assets/default_interval.list")
     ch_interval = create_default_interval( params.genome, interval_list )
 }
-
-if (params.drgstrmodel) { ch_drgstrmodel=params.drgstrmodel } else { ch_drgstrmodel = [] }
-if (params.dbsnp) { ch_dbsnp = params.dbsnp } else { ch_dbsnp = [] }
-if (params.dbsnp_tbi) { ch_dbsnp_tbi = params.dbsnp_tbi } else { ch_dbsnp_tbi = [] }
+ch_drgstrmodel = []
+ch_dbsnp = []
+ch_dbsnp_tbi = []
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,7 +114,7 @@ include { CREATE_MSA                     } from '../modules/local/create_msa'
 // Info required for completion email and summary
 def multiqc_report = []
 
-workflow TCD {
+workflow SNPPLET {
 
     ch_versions = Channel.empty()
 
@@ -224,10 +223,10 @@ workflow TCD {
     //
     // MODULE: MultiQC
     //
-    workflow_summary    = WorkflowTcd.paramsSummaryMultiqc(workflow, summary_params)
+    workflow_summary    = WorkflowSnpplet.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = WorkflowTcd.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description)
+    methods_description    = WorkflowSnpplet.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description)
     ch_methods_description = Channel.value(methods_description)
 
     ch_multiqc_files = Channel.empty()

@@ -1,11 +1,11 @@
 //
-// This file holds several functions specific to the workflow/tcd.nf in the nf-core/tcd pipeline
+// This file holds several functions specific to the workflow/snpplet.nf in the cenmig/snpplet pipeline
 //
 
 import nextflow.Nextflow
 import groovy.text.SimpleTemplateEngine
 
-class WorkflowTcd {
+class WorkflowSnpplet {
 
     //
     // Check and validate parameters

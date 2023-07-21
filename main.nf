@@ -1,12 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nf-core/tcd
-    TODO:
+    cenmig/snpplet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/nf-core/tcd
-    Website: https://nf-co.re/tcd
-    Slack  : https://nfcore.slack.com/channels/tcd
+    Github : https://github.com/cenmig/snpplet
 ----------------------------------------------------------------------------------------
 */
 
@@ -34,13 +31,13 @@ WorkflowMain.initialise(workflow, params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { TCD } from './workflows/tcd'
+include { SNPPLET } from './workflows/snpplet'
 
 //
-// WORKFLOW: Run main nf-core/tcd analysis pipeline
+// WORKFLOW: Run main cenmig/snpplet analysis pipeline
 //
-workflow NFCORE_TCD {
-    TCD ()
+workflow CENMIG {
+    SNPPLET ()
 }
 
 /*
@@ -54,7 +51,7 @@ workflow NFCORE_TCD {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    NFCORE_TCD ()
+    CENMIG ()
 }
 
 /*

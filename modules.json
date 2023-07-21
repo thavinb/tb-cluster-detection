@@ -1,6 +1,6 @@
 {
-    "name": "nf-core/tcd",
-    "homePage": "https://github.com/nf-core/tcd",
+    "name": "cenmig/snpplet",
+    "homePage": "https://github.com/cenmig/snpplet",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {

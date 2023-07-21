@@ -1,5 +1,5 @@
 //
-// This file holds several functions specific to the main.nf workflow in the nf-core/tcd pipeline
+// This file holds several functions specific to the main.nf workflow in the cenmig/snpplet pipeline
 //
 
 import nextflow.Nextflow

@@ -4,15 +4,15 @@
   |\\ | |__  __ /  ` /  \\ |__) |__         }  {
   | \\| |       \\__, \\__/ |  \\ |___     \\`-._,-`-,
                                         `._,._,'
-  nf-core/tcd v${version}
+  cenmig/snpplet v${version}
 ----------------------------------------------------
 Run Name: $runName
 
 <% if (success){
-    out << "## nf-core/tcd execution completed successfully! ##"
+    out << "## cenmig/snpplet execution completed successfully! ##"
 } else {
     out << """####################################################
-## nf-core/tcd execution completed unsuccessfully! ##
+## cenmig/snpplet execution completed unsuccessfully! ##
 ####################################################
 The exit status of the task that caused the workflow execution to fail was: $exitStatus.
 The full error message was:
@@ -35,5 +35,5 @@ Pipeline Configuration:
 <% out << summary.collect{ k,v -> " - $k: $v" }.join("\n") %>
 
 --
-nf-core/tcd
-https://github.com/nf-core/tcd
+cenmig/snpplet
+https://github.com/cenmig/snpplet
